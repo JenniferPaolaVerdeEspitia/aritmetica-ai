@@ -87,11 +87,12 @@
       const clientIp = await getPublicIP();
 
       status.textContent = "Enviando a n8n…";
-      const r = await fetch(N8N_WEBHOOK_URL + "?v=3", { // query para bust de caché en proxies
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: expr, clientIp }),
-      });
+      const r = await fetch(N8N_WEBHOOK_URL + "?v=3", {
+  method: "POST",
+  headers: { "Content-Type": "text/plain" },   // <-- antes era application/json
+  body: JSON.stringify({ texto_operacion: expr, ip_publica: clientIp }),
+});
+
 
       if (!r.ok) {
         const t = await r.text();
