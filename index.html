@@ -58,64 +58,68 @@
     </div>
   </main>
 
-  <script>
-    // ====== CONFIGURA AQUÍ TU WEBHOOK DE N8N ======
-    const N8N_WEBHOOK_URL = "https://jenniferpaola.app.n8n.cloud/webhook/60817880"; // <--- REEMPLAZA
+ <script>
+  // ¡PRODUCCIÓN! NADA de /webhook-test/ aquí
+  const N8N_WEBHOOK_URL = "https://jenniferpaola.app.n8n.cloud/webhook/60817880";
 
-    async function getPublicIP() {
-      const r = await fetch("https://api.ipify.org?format=json");
-      if (!r.ok) throw new Error("No se pudo obtener IP");
-      const { ip } = await r.json();
-      return ip;
-    }
+  // Seguridad: si por alguna razón quedara una test URL, avisa
+  if (N8N_WEBHOOK_URL.includes("webhook-test")) {
+    alert("Estás usando la TEST URL de n8n. Cambia a /webhook/arit");
+  }
+  console.log("Usando webhook:", N8N_WEBHOOK_URL);
 
-    async function calc() {
-      const status = document.getElementById("status");
-      const expr = document.getElementById("expr").value.trim();
-      const resBox = document.getElementById("result");
+  async function getPublicIP() {
+    const r = await fetch("https://api.ipify.org?format=json");
+    if (!r.ok) throw new Error("No se pudo obtener IP");
+    const { ip } = await r.json();
+    return ip;
+  }
 
-      resBox.classList.add("d-none");
-      status.textContent = "Obteniendo IP pública…";
+  async function calc() {
+    const status = document.getElementById("status");
+    const expr = document.getElementById("expr").value.trim();
+    const resBox = document.getElementById("result");
 
-      try {
-        const clientIp = await getPublicIP();
+    resBox.classList.add("d-none");
+    status.textContent = "Obteniendo IP pública…";
 
-        status.textContent = "Enviando a n8n…";
-        const r = await fetch(N8N_WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ text: expr, clientIp }),
-        });
+    try {
+      const clientIp = await getPublicIP();
 
-        if (!r.ok) {
-          const t = await r.text();
-          throw new Error(n8n respondió ${r.status}: ${t});
-        }
+      status.textContent = "Enviando a n8n…";
+      const r = await fetch(N8N_WEBHOOK_URL + "?v=3", { // query para bust de caché en proxies
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: expr, clientIp }),
+      });
 
-        const data = await r.json();
-        // data esperado: { ip, a, b, operation, result }
-        document.getElementById("ipOut").textContent = data.ip ?? clientIp ?? "-";
-        document.getElementById("aOut").textContent = (data.a ?? "").toString();
-        document.getElementById("bOut").textContent = (data.b ?? "").toString();
-        document.getElementById("opOut").textContent = data.operation ?? "-";
-        document.getElementById("resOut").textContent = (data.result ?? "").toString();
-
-        resBox.classList.remove("d-none");
-        status.textContent = "Listo ✓";
-      } catch (err) {
-        console.error(err);
-        status.textContent = "Error: " + err.message;
+      if (!r.ok) {
+        const t = await r.text();
+        throw new Error(n8n respondió ${r.status}: ${t});
       }
-    }
 
-    document.getElementById("btnCalc").addEventListener("click", calc);
-    document.getElementById("btnClear").addEventListener("click", () => {
-      document.getElementById("expr").value = "";
-      document.getElementById("status").textContent = "";
-      document.getElementById("result").classList.add("d-none");
-    });
-  </script>
+      const data = await r.json();
+      document.getElementById("ipOut").textContent = data.ip ?? clientIp ?? "-";
+      document.getElementById("aOut").textContent = (data.a ?? "").toString();
+      document.getElementById("bOut").textContent = (data.b ?? "").toString();
+      document.getElementById("opOut").textContent = data.operation ?? "-";
+      document.getElementById("resOut").textContent = (data.result ?? "").toString();
+
+      resBox.classList.remove("d-none");
+      status.textContent = "Listo ✓";
+    } catch (err) {
+      console.error(err);
+      status.textContent = "Error: " + err.message;
+    }
+  }
+
+  document.getElementById("btnCalc").addEventListener("click", calc);
+  document.getElementById("btnClear").addEventListener("click", () => {
+    document.getElementById("expr").value = "";
+    document.getElementById("status").textContent = "";
+    document.getElementById("result").classList.add("d-none");
+  });
+</script>
+
 </body>
 </html>
